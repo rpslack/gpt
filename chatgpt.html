@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenAI GPT-3.5 Question Answering Widget</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f6f6f6;
+      }
+      #chatbox {
+        width: 300px;
+        height: 400px;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        padding: 10px;
+        overflow: auto;
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+        margin-bottom: 10px;
+      }
+      #input-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      #inputbox {
+        width: 175px;
+        padding: 20px;
+        border: 1px solid #ddd;
+        margin-right: 10px;
+      }
+      #submitbutton {
+        padding: 20px;
+        border: none;
+        background-color: #4caf50;
+        color: white;
+        cursor: pointer;
+      }
+      #submitbutton:hover {
+        background-color: #45a049;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="chatbox"></div>
+    <div id="input-container">
+      <input
+        id="inputbox"
+        type="text"
+        placeholder="궁금한 점을 질문해주세요."
+      />
+      <button id="submitbutton">질문하기</button>
+    </div>
+
+    <script>
+      async function submitQuestion() {
+        var question = document.querySelector("#inputbox").value;
+        document.querySelector("#inputbox").value = "";
+
+        var chatbox = document.querySelector("#chatbox");
+        chatbox.innerHTML += "<p>수강생님: " + question + "</p>";
+
+        const response = await fetch(
+          "http://127.0.0.1:8000/api/question?" +
+            new URLSearchParams({
+              question: question,
+            })
+        );
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+
+        chatbox.innerHTML +=
+          '<span style="color: blue;font-weight: bold;"">' +
+          "학습도우미: " +
+          "</span>";
+        while (true) {
+          const { value, done } = await reader.read();
+
+          if (done) {
+            break;
+          }
+
+          const message = decoder
+            .decode(value)
+            .slice(6, -2)
+            .replace("data:", "");
+          chatbox.innerHTML +=
+            '<span style="color: blue;font-weight: bold;"">' +
+            message +
+            "</span>";
+
+          chatbox.scrollTop = chatbox.scrollHeight;
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        var chatbox = document.querySelector("#chatbox");
+        chatbox.innerHTML +=
+          '<p style="color: grey;">이곳은 강의 중에 모르는 단어나 간단한<br> 질문을 답변할 수 있는ChatGPT 학습<br> 도우미입니다.</p>';
+      });
+
+      document
+        .querySelector("#submitbutton")
+        .addEventListener("click", submitQuestion);
+
+      document
+        .querySelector("#inputbox")
+        .addEventListener("keyup", function (e) {
+          if (e.key === "Enter") {
+            submitQuestion();
+            chatbox.scrollTop = chatbox.scrollHeight;
+          }
+        });
+    </script>
+  </body>
+</html>
